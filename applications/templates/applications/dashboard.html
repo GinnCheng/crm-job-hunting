@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Hunting Tracker</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 24px; background: #f7f7f8; color: #222; }
+    h1 { margin-bottom: 4px; }
+    a { color: #0b57d0; text-decoration: none; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin: 20px 0; }
+    .card { background: white; border-radius: 14px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .metric { font-size: 30px; font-weight: 700; margin-top: 8px; }
+    .muted { color: #666; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+    th { background: #fafafa; font-size: 13px; color: #555; }
+    tr:last-child td { border-bottom: none; }
+    .section { margin-top: 28px; }
+    .pill { display:inline-block; padding: 3px 8px; border-radius: 999px; background:#eee; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <h1>Job Hunting Tracker</h1>
+      <div class="muted">Today: {{ today }}</div>
+    </div>
+    <div><a href="/admin/">Open Admin</a></div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="muted">Total records</div><div class="metric">{{ total }}</div></div>
+    <div class="card"><div class="muted">Applied</div><div class="metric">{{ applied }}</div></div>
+    <div class="card"><div class="muted">Reply rate</div><div class="metric">{{ reply_rate }}%</div></div>
+    <div class="card"><div class="muted">Interview rate</div><div class="metric">{{ interview_rate }}%</div></div>
+    <div class="card"><div class="muted">Offer rate</div><div class="metric">{{ offer_rate }}%</div></div>
+    <div class="card"><div class="muted">Avg days to reply</div><div class="metric">{{ avg_reply_days|default:"-" }}</div></div>
+  </div>
+
+  <div class="section">
+    <h2>Recent Applications</h2>
+    <table>
+      <tr><th>Date</th><th>Company</th><th>Role</th><th>Status</th><th>Days</th><th>Resume</th><th>Next Action</th></tr>
+      {% for app in recent_applications %}
+      <tr>
+        <td>{{ app.date_applied|default:"-" }}</td>
+        <td>{{ app.job.company.name }}</td>
+        <td>{{ app.job.title }}</td>
+        <td><span class="pill">{{ app.get_status_display }}</span></td>
+        <td>{{ app.days_since_applied|default:"-" }}</td>
+        <td>{{ app.resume.name|default:"-" }}</td>
+        <td>{{ app.next_action|default:"-" }} {% if app.next_action_date %}<span class="muted">({{ app.next_action_date }})</span>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7">No applications yet. Add one in Admin.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Upcoming Follow-ups</h2>
+    <table>
+      <tr><th>Date</th><th>Company</th><th>Role</th><th>Action</th></tr>
+      {% for app in upcoming_actions %}
+      <tr>
+        <td>{{ app.next_action_date }}</td>
+        <td>{{ app.job.company.name }}</td>
+        <td>{{ app.job.title }}</td>
+        <td>{{ app.next_action }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">No follow-ups scheduled.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Potentially Ghosted / Stale</h2>
+    <table>
+      <tr><th>Days</th><th>Company</th><th>Role</th><th>Applied</th></tr>
+      {% for app in stale_applications %}
+      <tr>
+        <td>{{ app.days_since_applied }}</td>
+        <td>{{ app.job.company.name }}</td>
+        <td>{{ app.job.title }}</td>
+        <td>{{ app.date_applied }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">No stale applications yet.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Status Summary</h2>
+    <table>
+      <tr><th>Status</th><th>Count</th></tr>
+      {% for row in status_counts %}
+      <tr><td>{{ row.status }}</td><td>{{ row.count }}</td></tr>
+      {% empty %}
+      <tr><td colspan="2">No data yet.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+</body>
+</html>
