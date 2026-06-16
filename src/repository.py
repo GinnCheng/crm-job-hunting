@@ -38,8 +38,6 @@ def get_all_applications() -> pd.DataFrame:
             company,
             job_title,
             location,
-            skills,
-            jd_posted_date,
             applied_date,
             date_diff('day', applied_date, current_date) as days_waiting,
             status,
@@ -47,8 +45,7 @@ def get_all_applications() -> pd.DataFrame:
             interview_stage,
             notes,
             cv_original_path,
-            cover_letter_original_path,
-            created_at
+            cover_letter_original_path
         from applications
         order by applied_date desc, created_at desc
     """).df()
