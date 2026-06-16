@@ -149,6 +149,7 @@ activemq-data/
 
 # Environments
 .env
+.env.example
 .envrc
 .venv
 env/
@@ -216,3 +217,21 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+media
+
+# database
+data/*.duckdb
+
+# extracted docs
+data/extracted_docs/
+
+# env
+
+# pycache
+*.pyc
+
+# streamlit
+.streamlit/
+
+# IDE
+.idea/

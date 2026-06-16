@@ -1,2 +1,5 @@
-Django>=5.0,<6.0
-python-dotenv>=1.0.0
+streamlit
+duckdb
+pandas
+python-docx
+python-dotenv
