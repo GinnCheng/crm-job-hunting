@@ -277,10 +277,12 @@ with tab_analytics:
 
             status_stats.columns = ["status", "count"]
 
-            st.bar_chart(
+            render_bar_chart(
                 status_stats,
                 x="status",
-                y="count"
+                y="count",
+                x_title="Status",
+                y_title="Applications",
             )
 
         with col4:
@@ -294,10 +296,12 @@ with tab_analytics:
 
             stage_stats.columns = ["stage", "count"]
 
-            st.bar_chart(
+            render_bar_chart(
                 stage_stats,
                 x="stage",
-                y="count"
+                y="count",
+                x_title="Stage",
+                y_title="Applications",
             )
 
         col5, col6 = st.columns(2)
@@ -315,10 +319,12 @@ with tab_analytics:
 
             location_stats.columns = ["location", "count"]
 
-            st.bar_chart(
+            render_bar_chart(
                 location_stats,
                 x="location",
-                y="count"
+                y="count",
+                x_title="Location",
+                y_title="Applications",
             )
 
         with col6:
@@ -332,8 +338,10 @@ with tab_analytics:
 
             reply_stats.columns = ["reply", "count"]
 
-            st.bar_chart(
+            render_bar_chart(
                 reply_stats,
                 x="reply",
-                y="count"
+                y="count",
+                x_title="Reply received",
+                y_title="Applications",
             )
