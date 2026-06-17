@@ -64,3 +64,15 @@ def replace_tracker(df: pd.DataFrame):
         from updated_df
         where applications.id = updated_df.id
     """)
+
+
+def delete_application(application_id):
+    conn = get_conn()
+
+    conn.execute(
+        """
+        delete from applications
+        where id = ?
+        """,
+        [application_id]
+    )

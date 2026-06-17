@@ -1,11 +1,17 @@
 import streamlit as st
 from datetime import date
+import altair as alt
 import pandas as pd
 
 from src.config import JOB_DOC_ROOT, CV_EXTRACTED_DIR, CL_EXTRACTED_DIR
 from src.jd_parser import parse_jd
 from src.document_parser import save_extracted_text
-from src.repository import add_application, get_all_applications, replace_tracker
+from src.repository import (
+    add_application,
+    get_all_applications,
+    replace_tracker,
+    delete_application,
+)
 
 st.set_page_config(page_title="Job Hunting CRM", layout="wide")
 
@@ -29,6 +35,24 @@ def list_docx_relative(folder_name: str):
             for p in folder.rglob("*.docx")
         ]
     )
+
+
+def render_bar_chart(data, x, y, x_title=None, y_title=None):
+    chart = (
+        alt.Chart(data)
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                x,
+                sort=None,
+                title=x_title,
+                axis=alt.Axis(labelAngle=-35),
+            ),
+            y=alt.Y(y, title=y_title),
+        )
+        .properties(height=300)
+    )
+    st.altair_chart(chart, use_container_width=True)
 
 with tab_add:
     st.subheader("Add new application")
@@ -143,6 +167,32 @@ with tab_tracker:
             replace_tracker(edited_df)
             st.success("Tracker updated.")
 
+        st.divider()
+
+        st.subheader("Delete application")
+
+        delete_options = df.apply(
+            lambda row: (
+                f"{row['company']} | "
+                f"{row['job_title']} | "
+                f"{row['applied_date']} | "
+                f"{row['id']}"
+            ),
+            axis=1,
+        ).tolist()
+
+        delete_option = st.selectbox(
+            "Select application to delete",
+            options=delete_options,
+        )
+
+        delete_id = delete_option.split(" | ")[-1]
+
+        if st.button("Delete selected application"):
+            delete_application(delete_id)
+            st.success(f"{delete_option} deleted.")
+            st.rerun()
+
 
 with tab_analytics:
     st.subheader("Analytics")
@@ -160,33 +210,58 @@ with tab_analytics:
         with col1:
             st.markdown("### Weekly applications")
 
+            week_periods = df["applied_date"].dt.to_period("W-SUN")
+            week_range = pd.period_range(
+                week_periods.min(),
+                week_periods.max(),
+                freq="W-SUN",
+            )
             weekly = (
-                df.set_index("applied_date")
-                  .resample("W")
-                  .size()
-                  .reset_index(name="count")
+                week_periods.value_counts()
+                .sort_index()
+                .reindex(week_range, fill_value=0)
+                .rename_axis("week")
+                .reset_index(name="count")
+            )
+            weekly["week"] = weekly["week"].apply(
+                lambda period: (
+                    f"{period.start_time:%y%m%d}-"
+                    f"{period.end_time:%y%m%d}"
+                )
             )
 
-            st.bar_chart(
+            render_bar_chart(
                 weekly,
-                x="applied_date",
-                y="count"
+                x="week",
+                y="count",
+                x_title="Week",
+                y_title="Applications",
             )
 
         with col2:
             st.markdown("### Monthly applications")
 
-            monthly = (
-                df.set_index("applied_date")
-                  .resample("M")
-                  .size()
-                  .reset_index(name="count")
+            month_periods = df["applied_date"].dt.to_period("M")
+            month_range = pd.period_range(
+                month_periods.min(),
+                month_periods.max(),
+                freq="M",
             )
+            monthly = (
+                month_periods.value_counts()
+                .sort_index()
+                .reindex(month_range, fill_value=0)
+                .rename_axis("month")
+                .reset_index(name="count")
+            )
+            monthly["month"] = monthly["month"].astype(str)
 
-            st.bar_chart(
+            render_bar_chart(
                 monthly,
-                x="applied_date",
-                y="count"
+                x="month",
+                y="count",
+                x_title="Month",
+                y_title="Applications",
             )
 
         col3, col4 = st.columns(2)

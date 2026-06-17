@@ -1,5 +1,6 @@
 streamlit
 duckdb
 pandas
+altair
 python-docx
 python-dotenv
