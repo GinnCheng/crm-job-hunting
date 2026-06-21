@@ -50,6 +50,40 @@ def get_all_applications() -> pd.DataFrame:
         order by applied_date desc, created_at desc
     """).df()
 
+
+def get_application_details(application_id):
+    conn = get_conn()
+    df = conn.execute(
+        """
+        select
+            id,
+            company,
+            job_title,
+            location,
+            skills,
+            jd_text,
+            jd_posted_date,
+            applied_date,
+            cv_original_path,
+            cv_text_path,
+            cover_letter_original_path,
+            cover_letter_text_path,
+            status,
+            reply_received,
+            interview_stage,
+            notes
+        from applications
+        where id = ?
+        """,
+        [application_id],
+    ).df()
+
+    if df.empty:
+        return None
+
+    return df.iloc[0]
+
+
 def replace_tracker(df: pd.DataFrame):
     conn = get_conn()
     conn.register("updated_df", df)

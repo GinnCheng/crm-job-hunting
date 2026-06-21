@@ -9,6 +9,7 @@ from src.document_parser import save_extracted_text
 from src.repository import (
     add_application,
     get_all_applications,
+    get_application_details,
     replace_tracker,
     delete_application,
 )
@@ -53,6 +54,90 @@ def render_bar_chart(data, x, y, x_title=None, y_title=None):
         .properties(height=300)
     )
     st.altair_chart(chart, use_container_width=True)
+
+
+def build_file_link(relative_path):
+    if relative_path is None or pd.isna(relative_path):
+        return None
+
+    relative_path = str(relative_path).strip()
+
+    if not relative_path:
+        return None
+
+    file_path = JOB_DOC_ROOT / relative_path
+
+    if not file_path.exists():
+        return None
+
+    return file_path.resolve().as_uri()
+
+
+def get_selected_row_index(selection_event):
+    if not selection_event:
+        return None
+
+    selection = getattr(selection_event, "selection", None)
+
+    if selection is None and isinstance(selection_event, dict):
+        selection = selection_event.get("selection")
+
+    if selection is None:
+        return None
+
+    rows = getattr(selection, "rows", None)
+
+    if rows is None and isinstance(selection, dict):
+        rows = selection.get("rows")
+
+    if not rows:
+        return None
+
+    return rows[0]
+
+
+def render_application_materials(application_id):
+    application_details = get_application_details(application_id)
+
+    if application_details is None:
+        st.warning("Selected application could not be found.")
+        return
+
+    st.caption(
+        f"{application_details['company']} | "
+        f"{application_details['job_title']} | "
+        f"Applied {application_details['applied_date']}"
+    )
+
+    link_col1, link_col2 = st.columns(2)
+
+    cv_link = build_file_link(application_details["cv_original_path"])
+    cl_link = build_file_link(application_details["cover_letter_original_path"])
+
+    with link_col1:
+        if cv_link:
+            st.markdown(f"[Open CV]({cv_link})")
+            st.caption(application_details["cv_original_path"])
+        else:
+            st.warning("CV file not found.")
+
+    with link_col2:
+        if cl_link:
+            st.markdown(f"[Open Cover Letter]({cl_link})")
+            st.caption(application_details["cover_letter_original_path"])
+        else:
+            st.warning("Cover Letter file not found.")
+
+    jd_text = application_details["jd_text"]
+    if pd.isna(jd_text) or not str(jd_text).strip():
+        jd_text = "No JD text saved for this application."
+
+    st.text_area(
+        "JD",
+        value=jd_text,
+        height=360,
+        disabled=True,
+    )
 
 with tab_add:
     st.subheader("Add new application")
@@ -149,6 +234,43 @@ with tab_tracker:
     if df.empty:
         st.info("No applications yet.")
     else:
+        tracker_display_df = df.drop(
+            columns=["cv_original_path", "cover_letter_original_path"],
+            errors="ignore",
+        )
+        try:
+            selection_event = st.dataframe(
+                tracker_display_df,
+                use_container_width=True,
+                hide_index=True,
+                on_select="rerun",
+                selection_mode="single-row",
+            )
+        except TypeError:
+            st.dataframe(
+                tracker_display_df,
+                use_container_width=True,
+                hide_index=True,
+            )
+            selection_event = None
+            st.warning(
+                "Row selection needs a newer Streamlit version. "
+                "Upgrade Streamlit to click rows and view materials."
+            )
+        selected_row_index = get_selected_row_index(selection_event)
+
+        st.divider()
+        st.subheader("Application materials")
+
+        if selected_row_index is None:
+            st.info("Select an application row to view its saved materials.")
+        else:
+            selected_application_id = df.iloc[selected_row_index]["id"]
+            render_application_materials(selected_application_id)
+
+        st.divider()
+        st.subheader("Edit tracker fields")
+
         editable_columns = [
             "status",
             "reply_received",
